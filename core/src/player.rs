@@ -945,6 +945,10 @@ impl Player {
                 if let PlayerEvent::KeyDown { key_code, key_char }
                 | PlayerEvent::KeyUp { key_code, key_char } = event
                 {
+                    let ctrl_key = context.input.is_key_down(KeyCode::Control);
+                    let alt_key = context.input.is_key_down(KeyCode::Alt);
+                    let shift_key = context.input.is_key_down(KeyCode::Shift);
+
                     let mut activation = Avm2Activation::from_nothing(context.reborrow());
 
                     let event_name = match event {
@@ -965,6 +969,11 @@ impl Player {
                                 false.into(),                            /* cancelable */
                                 key_char.map_or(0, |c| c as u32).into(), /* charCode */
                                 (key_code as u32).into(),                /* keyCode */
+                                0.into(),                                /* keyLocationValue */
+                                ctrl_key.into(),                         /* ctrlKey */
+                                alt_key.into(),                          /* altKey */
+                                shift_key.into(),                        /* shiftKey */
+                                ctrl_key.into(),                         /* controlKey */
                             ],
                         )
                         .expect("Failed to construct KeyboardEvent");
