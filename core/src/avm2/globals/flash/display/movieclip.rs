@@ -388,13 +388,17 @@ pub fn goto_frame<'gc>(
             .scene_label_to_number(&v.coerce_to_string(activation)?)
             .map(|v| v.saturating_sub(1)),
     }
-    .unwrap_or(0) as u32;
+    .unwrap_or(0) as i32;
     let frame = match frame_or_label {
-        Value::Integer(i) => i as u32 + scene,
+        Value::Integer(i) => i + scene,
         frame_or_label => {
             let frame_or_label = frame_or_label.coerce_to_string(activation)?;
-            if let Ok(frame) = frame_or_label.parse::<u32>() {
-                frame + scene
+            let frame = crate::avm2::value::string_to_int(&frame_or_label, 10, true);
+            if !frame.is_nan() {
+                (frame as i32)
+                    .wrapping_sub(1)
+                    .wrapping_add(scene)
+                    .saturating_add(1)
             } else {
                 if let Some(scene) = args.get(1).cloned() {
                     //If the user specified a scene, we need to validate that
@@ -408,15 +412,19 @@ pub fn goto_frame<'gc>(
                     }
                 }
 
-                mc.frame_label_to_number(&frame_or_label, &activation.context)
-                    .ok_or_else(|| {
+                let frame = mc.frame_label_to_number(&frame_or_label, &activation.context);
+                if activation.context.swf.version() >= 11 {
+                    frame.ok_or_else(|| {
                         format!("ArgumentError: {frame_or_label} is not a valid frame label.")
-                    })? as u32
+                    })? as i32
+                } else {
+                    frame.unwrap_or(0) as i32 // Old swf versions silently jump to frame 1 for invalid labels.
+                }
             }
         }
     };
 
-    mc.goto_frame(&mut activation.context, frame as u16, stop);
+    mc.goto_frame(&mut activation.context, frame.max(1) as u16, stop);
 
     Ok(())
 }
