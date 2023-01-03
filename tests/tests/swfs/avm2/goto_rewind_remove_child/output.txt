@@ -1,0 +1,6 @@
+1
+null
+3
+[object Symbol1_1]
+2
+null

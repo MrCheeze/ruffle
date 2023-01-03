@@ -345,6 +345,7 @@ swf_tests! {
     (as3_getouterscope, "avm2/getouterscope", 1),
     (as3_goto_methods, "avm2/goto_methods", 1),
     (as3_goto_methods_swfver10, "avm2/goto_methods_swfver10", 1),
+    (as3_goto_rewind_remove_child, "avm2/goto_rewind_remove_child", 1),
     (as3_greaterequals, "avm2/greaterequals", 1),
     (as3_greaterthan, "avm2/greaterthan", 1),
     (as3_has_own_property, "avm2/has_own_property", 1),
