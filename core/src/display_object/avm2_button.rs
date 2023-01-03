@@ -425,8 +425,6 @@ impl<'gc> TDisplayObject<'gc> for Avm2Button<'gc> {
         if run_frame {
             self.run_frame_avm2(context);
         }
-
-        self.set_state(context, ButtonState::Up);
     }
 
     fn enter_frame(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
@@ -480,6 +478,8 @@ impl<'gc> TDisplayObject<'gc> for Avm2Button<'gc> {
                 Ok(object) => self.0.write(context.gc_context).object = Some(object.into()),
                 Err(e) => log::error!("Got {} when constructing AVM2 side of button", e),
             };
+
+            self.on_construction_complete(context);
         }
 
         let needs_frame_construction = self.0.read().needs_frame_construction;
@@ -545,7 +545,7 @@ impl<'gc> TDisplayObject<'gc> for Avm2Button<'gc> {
 
                 self.frame_constructed(context);
 
-                self.set_state(context, ButtonState::Over);
+                self.set_state(context, ButtonState::Up);
 
                 //NOTE: Yes, we do have to run these in a different order from the
                 //regular run_frame method.
@@ -688,7 +688,7 @@ impl<'gc> TDisplayObject<'gc> for Avm2Button<'gc> {
             .read()
             .object
             .map(Avm2Value::from)
-            .unwrap_or(Avm2Value::Undefined)
+            .unwrap_or(Avm2Value::Null)
     }
 
     fn set_object2(&mut self, mc: MutationContext<'gc, '_>, to: Avm2Object<'gc>) {

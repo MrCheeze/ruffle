@@ -995,7 +995,9 @@ pub fn goto_frame<'gc>(
                     if let Ok(frame) = frame.parse().map(f64_to_wrapping_i32) {
                         // First try to parse as a frame number.
                         call_frame = Some((clip, frame));
-                    } else if let Some(frame) = clip.frame_label_to_number(frame) {
+                    } else if let Some(frame) =
+                        clip.frame_label_to_number(frame, &activation.context)
+                    {
                         // Otherwise, it's a frame label.
                         call_frame = Some((clip, frame as i32));
                     }
@@ -1339,6 +1341,7 @@ fn load_movie<'gc>(
         activation.context.player.clone(),
         DisplayObject::MovieClip(target),
         request,
+        None,
         None,
         None,
     );

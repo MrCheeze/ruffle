@@ -4,9 +4,8 @@ use crate::avm2::object::LoaderInfoObject;
 use crate::avm2::object::LoaderStream;
 use crate::avm2::Activation as Avm2Activation;
 use crate::avm2::{
-    Avm2, ClassObject as Avm2ClassObject, Error as Avm2Error, Multiname as Avm2Multiname,
-    Object as Avm2Object, QName as Avm2QName, StageObject as Avm2StageObject,
-    TObject as Avm2TObject, Value as Avm2Value,
+    Avm2, ClassObject as Avm2ClassObject, Error as Avm2Error, Object as Avm2Object,
+    QName as Avm2QName, StageObject as Avm2StageObject, TObject as Avm2TObject, Value as Avm2Value,
 };
 use crate::backend::audio::{SoundHandle, SoundInstanceHandle};
 use crate::backend::ui::MouseCursor;
@@ -18,8 +17,7 @@ use crate::binary_data::BinaryData;
 use crate::character::Character;
 use crate::context::{ActionType, RenderContext, UpdateContext};
 use crate::display_object::container::{
-    dispatch_added_event_only, dispatch_added_to_stage_event_only, dispatch_removed_event,
-    ChildContainer, TDisplayObjectContainer,
+    dispatch_removed_event, ChildContainer, TDisplayObjectContainer,
 };
 use crate::display_object::interactive::{
     InteractiveObject, InteractiveObjectBase, TInteractiveObject,
@@ -31,7 +29,6 @@ use crate::display_object::{
 use crate::drawing::Drawing;
 use crate::events::{ButtonKeyCode, ClipEvent, ClipEventResult};
 use crate::font::Font;
-use crate::frame_lifecycle::catchup_display_object_to_frame;
 use crate::limits::ExecutionLimit;
 use crate::prelude::*;
 use crate::string::{AvmString, WStr, WString};
@@ -573,6 +570,7 @@ impl<'gc> MovieClip<'gc> {
                     reader,
                     cur_frame,
                     &mut static_data,
+                    context,
                 ),
                 TagCode::JpegTables => self
                     .0
@@ -1192,11 +1190,24 @@ impl<'gc> MovieClip<'gc> {
         write.avm2_class = constr;
     }
 
-    pub fn frame_label_to_number(self, frame_label: &WStr) -> Option<FrameNumber> {
-        // Frame labels are case insensitive (ASCII).
-        // TODO: Should be case sensitive in AVM2.
-        let label = frame_label.to_ascii_lowercase();
-        self.0.read().static_data.frame_labels.get(&label).copied()
+    pub fn frame_label_to_number(
+        self,
+        frame_label: &WStr,
+        context: &UpdateContext<'_, 'gc, '_>,
+    ) -> Option<FrameNumber> {
+        // In AVM1, frame labels are case insensitive (ASCII).
+        // They are case sensitive in AVM2.
+        if context.is_action_script_3() {
+            self.0
+                .read()
+                .static_data
+                .frame_labels
+                .get(frame_label)
+                .copied()
+        } else {
+            let label = frame_label.to_ascii_lowercase();
+            self.0.read().static_data.frame_labels.get(&label).copied()
+        }
     }
 
     pub fn scene_label_to_number(self, scene_label: &WStr) -> Option<FrameNumber> {
@@ -1210,9 +1221,14 @@ impl<'gc> MovieClip<'gc> {
             .copied()
     }
 
-    pub fn frame_exists_within_scene(self, frame_label: &WStr, scene_label: &WStr) -> bool {
+    pub fn frame_exists_within_scene(
+        self,
+        frame_label: &WStr,
+        scene_label: &WStr,
+        context: &UpdateContext<'_, 'gc, '_>,
+    ) -> bool {
         let scene = self.scene_label_to_number(scene_label);
-        let frame = self.frame_label_to_number(frame_label);
+        let frame = self.frame_label_to_number(frame_label, context);
 
         if scene.is_none() || frame.is_none() {
             return false;
@@ -1453,7 +1469,6 @@ impl<'gc> MovieClip<'gc> {
                 // Remove previous child from children list,
                 // and add new child onto front of the list.
                 let prev_child = self.replace_at_depth(context, child, depth);
-                let mut placed_with_name = false;
                 {
                     // Set initial properties for child.
                     child.set_instantiated_by_timeline(context.gc_context, true);
@@ -1464,13 +1479,13 @@ impl<'gc> MovieClip<'gc> {
                     // Apply PlaceObject parameters.
                     child.apply_place_object(context, place_object);
                     if let Some(name) = &place_object.name {
-                        placed_with_name = true;
                         let encoding = swf::SwfStr::encoding_for_version(self.swf_version());
                         let name = name.to_str_lossy(encoding);
                         child.set_name(
                             context.gc_context,
                             AvmString::new_utf8(context.gc_context, name),
                         );
+                        child.set_has_explicit_name(context.gc_context, true);
                     }
                     if let Some(clip_depth) = place_object.clip_depth {
                         child.set_clip_depth(context.gc_context, clip_depth.into());
@@ -1492,8 +1507,8 @@ impl<'gc> MovieClip<'gc> {
                     // TODO: Missing PlaceObject properties: amf_data, filters
 
                     // Run first frame.
-                    catchup_display_object_to_frame(context, child);
                     child.post_instantiation(context, None, Instantiator::Movie, false);
+                    child.enter_frame(context);
                     // In AVM1, children are added in `run_frame` so this is necessary.
                     // In AVM2 we add them in `construct_frame` so calling this causes
                     // duplicate frames
@@ -1502,26 +1517,8 @@ impl<'gc> MovieClip<'gc> {
                     }
                 }
 
-                dispatch_added_event_only(child, context);
-                dispatch_added_to_stage_event_only(child, context);
                 if let Some(prev_child) = prev_child {
                     dispatch_removed_event(prev_child, context);
-                }
-
-                if placed_with_name {
-                    if let Avm2Value::Object(mut p) = self.object2() {
-                        if let Avm2Value::Object(c) = child.object2() {
-                            let name = Avm2Multiname::public(child.name());
-                            let mut activation = Avm2Activation::from_nothing(context.reborrow());
-                            if let Err(e) = p.init_property(&name, c.into(), &mut activation) {
-                                log::error!(
-                                    "Got error when setting AVM2 child named \"{}\": {}",
-                                    &child.name(),
-                                    e
-                                );
-                            }
-                        }
-                    }
                 }
 
                 Some(child)
@@ -2274,29 +2271,10 @@ impl<'gc> TDisplayObject<'gc> for MovieClip<'gc> {
             if is_playing {
                 self.run_frame_internal(context, true, true);
             }
-        }
-    }
-
-    /// Construct objects placed on this frame.
-    fn construct_frame(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
-        // New children will be constructed when they are instantiated and thus
-        // if we construct before our children, they'll get double-constructed.
-        for child in self.iter_render_list() {
-            child.construct_frame(context);
-        }
-
-        // AVM1 code expects to execute in line with timeline instructions, so
-        // it's exempted from frame construction.
-        if context.is_action_script_3() && self.frames_loaded() >= 1 {
-            let is_load_frame = !self.0.read().initialized();
-            let needs_construction = if matches!(self.object2(), Avm2Value::Undefined) {
-                self.allocate_as_avm2_object(context, (*self).into());
-                true
-            } else {
-                false
-            };
 
             // PlaceObject tags execute at this time.
+            // Note that this is NOT when constructors run; that happens later
+            // after tags have executed.
             let data = self.0.read().static_data.swf.clone();
             let place_actions = self.unqueue_adds(context);
 
@@ -2311,22 +2289,32 @@ impl<'gc> TDisplayObject<'gc> for MovieClip<'gc> {
                     log::error!("Error running queued tag: {:?}, got {}", tag.tag_type, e);
                 }
             }
+        }
+    }
+
+    /// Construct objects placed on this frame.
+    fn construct_frame(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
+        // AVM1 code expects to execute in line with timeline instructions, so
+        // it's exempted from frame construction.
+        if context.is_action_script_3() && self.frames_loaded() >= 1 {
+            let is_load_frame = !self.0.read().initialized();
+            let needs_construction = if matches!(self.object2(), Avm2Value::Null) {
+                self.allocate_as_avm2_object(context, (*self).into());
+                true
+            } else {
+                false
+            };
 
             self.0.write(context.gc_context).unset_loop_queued();
 
             if needs_construction {
                 self.construct_as_avm2_object(context);
-
-                // AVM2 roots work exactly the same as any other timeline- or
-                // script-constructed object in terms of events received on
-                // them. However, because roots are added by the player itself,
-                // we can't fire the events until we run our first frame, so we
-                // have to actually check if we've just built the root and act
-                // like it just got added to the timeline.
-                let self_dobj: DisplayObject<'gc> = (*self).into();
-                if self_dobj.is_root() {
-                    dispatch_added_event_only(self_dobj, context);
-                    dispatch_added_to_stage_event_only(self_dobj, context);
+                self.on_construction_complete(context);
+            } else {
+                // The supercall constructor for display objects is responsible
+                // for triggering construct_frame on frame 1.
+                for child in self.iter_render_list() {
+                    child.construct_frame(context);
                 }
             }
 
@@ -2557,7 +2545,7 @@ impl<'gc> TDisplayObject<'gc> for MovieClip<'gc> {
             .object
             .and_then(|o| o.as_avm2_object())
             .map(Avm2Value::from)
-            .unwrap_or(Avm2Value::Undefined)
+            .unwrap_or(Avm2Value::Null)
     }
 
     fn set_object2(&mut self, mc: MutationContext<'gc, '_>, to: Avm2Object<'gc>) {
@@ -2673,7 +2661,7 @@ impl<'gc> TInteractiveObject<'gc> for MovieClip<'gc> {
         };
 
         if let Some(frame_name) = frame_name {
-            if let Some(frame_number) = self.frame_label_to_number(frame_name) {
+            if let Some(frame_number) = self.frame_label_to_number(frame_name, &context) {
                 if self.is_button_mode(context) {
                     self.goto_frame(context, frame_number, true);
                 }
@@ -3577,6 +3565,7 @@ impl<'gc, 'a> MovieClipData<'gc> {
         reader: &mut SwfStream<'a>,
         cur_frame: FrameNumber,
         static_data: &mut MovieClipStatic<'gc>,
+        context: &UpdateContext<'_, 'gc, '_>,
     ) -> Result<(), Error> {
         let frame_label = reader.read_frame_label()?;
         let mut label = frame_label
@@ -3584,8 +3573,10 @@ impl<'gc, 'a> MovieClipData<'gc> {
             .to_str_lossy(reader.encoding())
             .into_owned();
 
-        // Frame labels are case insensitive (ASCII).
-        label.make_ascii_lowercase();
+        // In AVM1, frame labels are case insensitive (ASCII), but in AVM2 they are case sensitive.
+        if !context.is_action_script_3() {
+            label.make_ascii_lowercase();
+        }
         let label = WString::from_utf8_owned(label);
         if let std::collections::hash_map::Entry::Vacant(v) = static_data.frame_labels.entry(label)
         {

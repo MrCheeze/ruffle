@@ -36,7 +36,10 @@ mod text;
 mod video;
 
 use crate::avm1::Activation;
-pub use crate::display_object::container::{DisplayObjectContainer, TDisplayObjectContainer};
+pub use crate::display_object::container::{
+    dispatch_added_event_only, dispatch_added_to_stage_event_only, DisplayObjectContainer,
+    TDisplayObjectContainer,
+};
 pub use avm1_button::{Avm1Button, ButtonState, ButtonTracking};
 pub use avm2_button::Avm2Button;
 pub use bitmap::Bitmap;
@@ -476,6 +479,14 @@ impl<'gc> DisplayObjectBase<'gc> {
 
     fn set_has_scroll_rect(&mut self, value: bool) {
         self.flags.set(DisplayObjectFlags::HAS_SCROLL_RECT, value);
+    }
+
+    fn has_explicit_name(&self) -> bool {
+        self.flags.contains(DisplayObjectFlags::HAS_EXPLICIT_NAME)
+    }
+
+    fn set_has_explicit_name(&mut self, value: bool) {
+        self.flags.set(DisplayObjectFlags::HAS_EXPLICIT_NAME, value);
     }
 
     fn masker(&self) -> Option<DisplayObject<'gc>> {
@@ -1237,6 +1248,24 @@ pub trait TDisplayObject<'gc>:
             .set_instantiated_by_timeline(value);
     }
 
+    /// Whether this display object was placed by a SWF tag with an explicit
+    /// name.
+    ///
+    /// When this flag is set, the object will attempt to set a dynamic property
+    /// on the parent with the same name as itself.
+    fn has_explicit_name(&self) -> bool {
+        self.base().has_explicit_name()
+    }
+
+    /// Sets whether this display object was placed by a SWF tag with an
+    /// explicit name.
+    ///
+    /// When this flag is set, the object will attempt to set a dynamic property
+    /// on the parent with the same name as itself.
+    fn set_has_explicit_name(&self, gc_context: MutationContext<'gc, '_>, value: bool) {
+        self.base_mut(gc_context).set_has_explicit_name(value);
+    }
+
     /// Run any start-of-frame actions for this display object.
     ///
     /// When fired on `Stage`, this also emits the AVM2 `enterFrame` broadcast.
@@ -1252,6 +1281,54 @@ pub trait TDisplayObject<'gc>:
     /// 2. That newly created children have been instantiated and are present
     ///    as properties on the class
     fn construct_frame(&self, _context: &mut UpdateContext<'_, 'gc, '_>) {}
+
+    /// To be called when an AVM2 display object has finished being constructed.
+    ///
+    /// This function must be called once and ONLY once, after the object's
+    /// AVM2 side has been constructed. Typically, this is in construct_frame,
+    /// unless your object needs to construct itself earlier or later. When
+    /// this function is called on the child, it will fire its add events and,
+    /// if possible, set a named property on the parent matching the name of
+    /// the object.
+    ///
+    /// If the child was placed by AVM2, this function is a no-op, since AVM2
+    /// will already trip these events. Objects that cannot be constructed by
+    /// the timeline do not need to call this method.
+    ///
+    /// Since we construct AVM2 display objects after they are allocated and
+    /// placed on the render list, these steps have to be done by the child
+    /// object to signal to its parent that it was added.
+    fn on_construction_complete(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
+        if !self.placed_by_script() {
+            // Since we construct AVM2 display objects after they are
+            // allocated and placed on the render list, we have to emit all
+            // events after this point.
+            //
+            // Children added to buttons by the timeline do not emit events.
+            if self.parent().and_then(|p| p.as_avm2_button()).is_none() {
+                dispatch_added_event_only((*self).into(), context);
+                dispatch_added_to_stage_event_only((*self).into(), context);
+            }
+
+            //TODO: Don't report missing property errors.
+            //TODO: Don't attempt to set properties if object was placed without a name.
+            if self.has_explicit_name() {
+                if let Some(Avm2Value::Object(mut p)) = self.parent().map(|p| p.object2()) {
+                    if let Avm2Value::Object(c) = self.object2() {
+                        let name = Avm2Multiname::public(self.name());
+                        let mut activation = Avm2Activation::from_nothing(context.reborrow());
+                        if let Err(e) = p.init_property(&name, c.into(), &mut activation) {
+                            log::error!(
+                                "Got error when setting AVM2 child named \"{}\": {}",
+                                &self.name(),
+                                e
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// Execute all other timeline actions on this object.
     fn run_frame(&self, _context: &mut UpdateContext<'_, 'gc, '_>) {}
@@ -1486,7 +1563,7 @@ pub trait TDisplayObject<'gc>:
     }
 
     fn object2(&self) -> Avm2Value<'gc> {
-        Avm2Value::Undefined // TODO: See above.
+        Avm2Value::Undefined // TODO: See above. Also, unconstructed objects should return null.
     }
 
     fn set_object2(&mut self, _mc: MutationContext<'gc, '_>, _to: Avm2Object<'gc>) {}
@@ -1713,6 +1790,9 @@ bitflags! {
 
         /// Whether this object has a scroll rectangle applied.
         const HAS_SCROLL_RECT          = 1 << 9;
+
+        /// Whether this object has an explicit name.
+        const HAS_EXPLICIT_NAME        = 1 << 10;
     }
 }
 

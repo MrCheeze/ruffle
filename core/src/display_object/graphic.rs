@@ -131,7 +131,7 @@ impl<'gc> TDisplayObject<'gc> for Graphic<'gc> {
     }
 
     fn construct_frame(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
-        if context.is_action_script_3() && matches!(self.object2(), Avm2Value::Undefined) {
+        if context.is_action_script_3() && matches!(self.object2(), Avm2Value::Null) {
             let shape_constr = context.avm2.classes().shape;
             let mut activation = Avm2Activation::from_nothing(context.reborrow());
 
@@ -145,6 +145,8 @@ impl<'gc> TDisplayObject<'gc> for Graphic<'gc> {
                 }
                 Err(e) => log::error!("Got {} when constructing AVM2 side of display object", e),
             }
+
+            self.on_construction_complete(context);
         }
     }
 
@@ -233,7 +235,7 @@ impl<'gc> TDisplayObject<'gc> for Graphic<'gc> {
             .read()
             .avm2_object
             .map(Avm2Value::from)
-            .unwrap_or(Avm2Value::Undefined)
+            .unwrap_or(Avm2Value::Null)
     }
 
     fn set_object2(&mut self, mc: MutationContext<'gc, '_>, to: Avm2Object<'gc>) {

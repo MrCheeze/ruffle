@@ -392,7 +392,7 @@ impl<'gc> TDisplayObject<'gc> for Video<'gc> {
     }
 
     fn construct_frame(&self, context: &mut UpdateContext<'_, 'gc, '_>) {
-        if context.is_action_script_3() && matches!(self.object2(), Avm2Value::Undefined) {
+        if context.is_action_script_3() && matches!(self.object2(), Avm2Value::Null) {
             let video_constr = context.avm2.classes().video;
             let mut activation = Avm2Activation::from_nothing(context.reborrow());
             match Avm2StageObject::for_display_object_childless(
@@ -406,6 +406,8 @@ impl<'gc> TDisplayObject<'gc> for Video<'gc> {
                 }
                 Err(e) => log::error!("Got {} when constructing AVM2 side of video player", e),
             }
+
+            self.on_construction_complete(context);
         }
     }
 

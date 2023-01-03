@@ -400,7 +400,7 @@ pub fn goto_frame<'gc>(
                     //If the user specified a scene, we need to validate that
                     //the requested frame exists within that scene.
                     let scene = scene.coerce_to_string(activation)?;
-                    if !mc.frame_exists_within_scene(&frame_or_label, &scene) {
+                    if !mc.frame_exists_within_scene(&frame_or_label, &scene, &activation.context) {
                         return Err(format!(
                             "ArgumentError: Frame label {frame_or_label} not found in scene {scene}",
                         )
@@ -408,9 +408,10 @@ pub fn goto_frame<'gc>(
                     }
                 }
 
-                mc.frame_label_to_number(&frame_or_label).ok_or_else(|| {
-                    format!("ArgumentError: {frame_or_label} is not a valid frame label.")
-                })? as u32
+                mc.frame_label_to_number(&frame_or_label, &activation.context)
+                    .ok_or_else(|| {
+                        format!("ArgumentError: {frame_or_label} is not a valid frame label.")
+                    })? as u32
             }
         }
     };
