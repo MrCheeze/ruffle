@@ -1,0 +1,299 @@
+// donut
+// [object MovieClip].hitTestPoint(400, 400, true)
+false
+// [object MovieClip].hitTestPoint(250, 250, true)
+false
+// [object MovieClip].hitTestPoint(550, 250, true)
+false
+// [object MovieClip].hitTestPoint(250, 550, true)
+false
+// [object MovieClip].hitTestPoint(550, 550, true)
+false
+// [object MovieClip].hitTestPoint(400, 500, true)
+true
+// [object MovieClip].hitTestPoint(500, 400, true)
+true
+// [object MovieClip].hitTestPoint(400, 300, true)
+true
+// [object MovieClip].hitTestPoint(300, 400, true)
+true
+// [object MovieClip].hitTestPoint(NaN, NaN, true)
+false
+
+// donut, root transformed
+// [object MovieClip].hitTestPoint(400, 400, true)
+false
+// [object MovieClip].hitTestPoint(250, 250, true)
+false
+// [object MovieClip].hitTestPoint(550, 250, true)
+false
+// [object MovieClip].hitTestPoint(250, 550, true)
+false
+// [object MovieClip].hitTestPoint(550, 550, true)
+false
+// [object MovieClip].hitTestPoint(400, 500, true)
+true
+// [object MovieClip].hitTestPoint(500, 400, true)
+true
+// [object MovieClip].hitTestPoint(400, 300, true)
+true
+// [object MovieClip].hitTestPoint(300, 400, true)
+true
+
+// strokes
+// [object MovieClip].hitTestPoint(400, 50, true)
+true
+// [object MovieClip].hitTestPoint(50, 400, true)
+true
+// [object MovieClip].hitTestPoint(750, 400, true)
+true
+// [object MovieClip].hitTestPoint(400, 750, true)
+true
+// [object MovieClip].hitTestPoint(575, 575, true)
+true
+// [object MovieClip].hitTestPoint(400, 350, true)
+true
+// [object MovieClip].hitTestPoint(350, 400, true)
+true
+// [object MovieClip].hitTestPoint(390, 200, true)
+false
+// [object MovieClip].hitTestPoint(400, 270, true)
+true
+// [object MovieClip].hitTestPoint(400, 200, true)
+false
+
+// layers
+// [object MovieClip].hitTestPoint(400, 400, true)
+true
+// [object MovieClip].hitTestPoint(400, 300, true)
+true
+// [object MovieClip].hitTestPoint(300, 400, true)
+true
+// [object MovieClip].hitTestPoint(200, 300, true)
+true
+// [object MovieClip].hitTestPoint(400, 200, true)
+false
+// [object MovieClip].hitTestPoint(400, 150, true)
+false
+// [object MovieClip].hitTestPoint(400, 655, true)
+false
+
+// scribble
+// [object MovieClip].hitTestPoint(100, 100, true)
+false
+// [object MovieClip].hitTestPoint(200, 204, true)
+true
+// [object MovieClip].hitTestPoint(700, 750, true)
+false
+// [object MovieClip].hitTestPoint(590, 652, true)
+true
+// [object MovieClip].hitTestPoint(400, 400, true)
+false
+
+// children + visible
+// [object Children_5].hitTestPoint(400, 400, true)
+true
+// [object Children_5].hitTestPoint(700, 50, true)
+true
+// [object Children_5].hitTestPoint(400, 600, true)
+true
+// [object Children_5].hitTestPoint(600, 600, true)
+true
+// [object Children_5].hitTestPoint(500, 300, true)
+false
+// [object Children_5].hitTestPoint(700, 600, true)
+true
+// [object Children_5].hitTestPoint(50, 500, true)
+false
+// [object Children_5].hitTestPoint(100, 600, true)
+true
+// [object Children_5].hitTestPoint(700, 750, true)
+true
+
+// drawing API
+// [object MovieClip].hitTestPoint(400, 400, true)
+true
+// [object MovieClip].hitTestPoint(470, 550, true)
+false
+// [object MovieClip].hitTestPoint(350, 50, true)
+true
+// [object MovieClip].hitTestPoint(100, 335, true)
+true
+// [object MovieClip].hitTestPoint(250, 385, true)
+true
+// [object MovieClip].hitTestPoint(350, 335, true)
+false
+// [object MovieClip].hitTestPoint(550, 535, true)
+false
+// [object MovieClip].hitTestPoint(50, 35, true)
+false
+// [object MovieClip].hitTestPoint(60, 635, true)
+false
+// [object MovieClip].hitTestPoint(725, 520, true)
+true
+// [object MovieClip].hitTestPoint(750, 553, true)
+true
+// [object MovieClip].hitTestPoint(672, 670, true)
+false
+
+// drawing API, root transformed
+// [object MovieClip].hitTestPoint(400, 400, true)
+false
+// [object MovieClip].hitTestPoint(470, 550, true)
+false
+// [object MovieClip].hitTestPoint(350, 50, true)
+false
+// [object MovieClip].hitTestPoint(100, 335, true)
+false
+// [object MovieClip].hitTestPoint(250, 385, true)
+false
+// [object MovieClip].hitTestPoint(350, 335, true)
+false
+// [object MovieClip].hitTestPoint(550, 535, true)
+true
+// [object MovieClip].hitTestPoint(50, 35, true)
+false
+// [object MovieClip].hitTestPoint(60, 635, true)
+false
+
+// bg art
+// [object bg_9].hitTestPoint(500, 500, true)
+true
+// [object bg_9].hitTestPoint(-100, 500, true)
+true
+// [object bg_9].hitTestPoint(100, 200, true)
+true
+// [object bg_9].hitTestPoint(700, 200, true)
+true
+// [object bg_9].hitTestPoint(400, 150, true)
+true
+// [object bg_9].hitTestPoint(300, 300, true)
+false
+// [object bg_9].hitTestPoint(400, 200, true)
+false
+
+// text + dynamic text
+// [object MovieClip].hitTestPoint(251, 120, true)
+true
+// [object MovieClip].hitTestPoint(303, 135, true)
+false
+// [object MovieClip].hitTestPoint(300, 220, true)
+false
+// [object MovieClip].hitTestPoint(262, 320, true)
+true
+// [object MovieClip].hitTestPoint(370, 320, true)
+true
+// [object MovieClip].hitTestPoint(300, 320, true)
+false
+// [object MovieClip].hitTestPoint(390, 330, true)
+false
+// [object MovieClip].hitTestPoint(390, 430, true)
+false
+// [object MovieClip].hitTestPoint(290, 450, true)
+false
+// [object MovieClip].hitTestPoint(190, 480, true)
+false
+// [object MovieClip].hitTestPoint(650, 430, true)
+false
+// [object MovieClip].hitTestPoint(650, 400, true)
+false
+// [object MovieClip].hitTestPoint(205, 630, true)
+true
+// [object MovieClip].hitTestPoint(420, 650, true)
+true
+// [object MovieClip].hitTestPoint(790, 630, true)
+false
+
+// morph shape
+// [object Symbol6_12].hitTestPoint(350, 400, true)
+true
+// [object Symbol6_12].hitTestPoint(200, 400, true)
+false
+// [object Symbol6_12].hitTestPoint(500, 450, true)
+false
+// [object Symbol6_12].hitTestPoint(350, 250, true)
+true
+// [object Symbol6_12].hitTestPoint(350, 198, true)
+true
+// [object Symbol6_12].hitTestPoint(250, 220, true)
+true
+// [object Symbol6_12].hitTestPoint(450, 220, true)
+true
+// [object Symbol6_12].hitTestPoint(250, 520, true)
+true
+
+// Normal clip
+/// outside (false)
+// [object MovieClip].hitTestPoint(0, 0, true)
+false
+/// inside (true)
+// [object MovieClip].hitTestPoint(96, 96, true)
+true
+// Masked clip
+/// inside masked area (false)
+// [object MovieClip].hitTestPoint(296, 160, true)
+false
+/// inside unmasked area (true)
+// [object MovieClip].hitTestPoint(296, 48, true)
+true
+// Invisible clip (true)
+// [object MovieClip].hitTestPoint(496, 48, true)
+true
+// Clip masked by a clipping layer
+/// inside masked area (true)
+// [object MovieClip].hitTestPoint(696, 160, true)
+true
+/// inside unmasked area (true)
+// [object MovieClip].hitTestPoint(696, 48, true)
+true
+// Clip with children masked by a mask
+/// inside masked area (true)
+// [object mc_inner_masked_14].hitTestPoint(96, 360, true)
+true
+/// inside unmasked area (true)
+// [object mc_inner_masked_14].hitTestPoint(96, 264, true)
+true
+/// inside the mask itself (true)
+// [object mc_inner_masked_14].hitTestPoint(24, 200, true)
+true
+// Clip with children masked by a clipping layer
+/// inside masked area (false)
+// [object MovieClip].hitTestPoint(296, 360, true)
+false
+/// inside unmasked area (true)
+// [object MovieClip].hitTestPoint(296, 248, true)
+true
+/// inside the clipping layer itself (false)
+// [object MovieClip].hitTestPoint(224, 200, true)
+false
+
+// wonderputt (#7684)
+// [object MovieClip].hitTestPoint(151.85, 635.1, true)
+false
+// [object MovieClip].hitTestPoint(163.25, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(162.55, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(150.5, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(165.4, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(164.7, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(164, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(163.3, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(162.6, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(161.9, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(161.2, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(160.5, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(159.75, 648.9, true)
+false
+// [object MovieClip].hitTestPoint(159.25, 648.9, true)
+false
+
