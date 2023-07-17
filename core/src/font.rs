@@ -282,7 +282,7 @@ impl<'gc> Font<'gc> {
                     advance += self.get_kerning_offset(c, next_char);
                 }
                 let twips_advance =
-                    Twips::new((advance.get() as f32 * scale) as i32) + params.letter_spacing;
+                    Twips::new((advance.get() as f32 * scale) as i32 - 8) + params.letter_spacing;
 
                 glyph_func(pos, &transform, glyph, twips_advance, x);
 
