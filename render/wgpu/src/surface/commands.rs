@@ -317,6 +317,7 @@ impl<'pass, 'frame: 'pass, 'global: 'frame> CommandRenderer<'pass, 'frame, 'glob
                 continue;
             }
 
+            let mut matrix = transform.matrix;
             match &draw.draw_type {
                 DrawType::Color => {
                     self.prep_color();
@@ -326,9 +327,10 @@ impl<'pass, 'frame: 'pass, 'global: 'frame> CommandRenderer<'pass, 'frame, 'glob
                 }
                 DrawType::Bitmap { binds, .. } => {
                     self.prep_bitmap(&binds.bind_group, TrivialBlend::Normal, false);
+                    PixelSnapping::Auto.apply(&mut matrix);
                 }
             }
-            self.apply_transform(&transform.matrix, &transform.color_transform);
+            self.apply_transform(&matrix, &transform.color_transform);
 
             self.draw(
                 mesh.vertex_buffer.slice(draw.vertices.clone()),
